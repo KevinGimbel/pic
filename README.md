@@ -3,18 +3,12 @@
 
 <!-- BEGIN mktoc {"min_depth": 2} -->
 
-- [Files](#files)
 - [Usage](#usage)
   - [Alias](#alias)
   - [Migrating from existing installation](#migrating-from-existing-installation)
 - [Installing additional tools](#installing-additional-tools)
 - [Why?](#why)
 <!-- END mktoc -->
-
-## Files
-
-- `Dockerfile` builds Pi on Node.js 24 LTS.
-- `run-pi-podman.sh` builds the image and runs Pi with the selected project mounted at `/workspace`.
 
 ## Usage
 
