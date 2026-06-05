@@ -18,4 +18,7 @@ USER node
 WORKDIR /workspace
 ENV HOME=/home/node
 
+# Add local `bin` directories to PATH
+ENV PATH="$PATH:./bin"
+
 ENTRYPOINT ["pi"]
