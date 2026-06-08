@@ -25,20 +25,25 @@
 
 Run `pi` through the container by executing the script `./run-pi-podman.sh`. On first use or if the `PI_VERSION` in the Containerfile changed, the container is built fresh.
 
-Each script argument is mounted as a container volume. If no arguments are supplied, the current directory is mounted at `/workspace`. If plain host paths are supplied, the first path is mounted at `/workspace` and additional paths are mounted under `/volumes/`. You can also pass explicit Podman-style volume specs such as `/host/path:/container/path[:options]`.
+The current directory is always mounted at `/workspace`. Additional volumes are configured with `--volume volumeConfig` or `-v volumeConfig`, where `volumeConfig` is a Podman-style volume string such as `/host/path:/container/path[:options]`. The script adds `nodev,nosuid` and defaults to `rw` when no options are supplied. Additional volumes cannot target `/workspace`, because that path is reserved for the current directory.
+
+Every other argument is passed to `pi` inside the container; no `--` separator is required.
 
 ```bash
-# Grant access to files in current directory at /workspace
+# Grant access to files in the current directory at /workspace
 ./run-pi-podman.sh
 
-# Mount a specific project at /workspace
-./run-pi-podman.sh /path/to/project
+# Mount an additional host path
+./run-pi-podman.sh -v /path/to/other:/volumes/other:ro
 
-# Mount multiple host paths
-./run-pi-podman.sh /path/to/project /path/to/other
+# Mount multiple additional host paths
+./run-pi-podman.sh -v /path/to/cache:/cache -v /path/to/other:/volumes/other:ro
 
-# Mount explicit host/container paths
-./run-pi-podman.sh /path/to/project:/workspace /path/to/cache:/cache:ro
+# Pass arguments to pi
+./run-pi-podman.sh --help
+
+# Pass arguments to pi while mounting an additional host path
+./run-pi-podman.sh --volume /path/to/other:/volumes/other --help
 ```
 
 ### Alias
@@ -50,7 +55,7 @@ Create an alias for easy invocation:
 alias pic="/path/to/repo/run-pi-podman.sh"
 ```
 
-Use the alias by running `pic`, `pic /some/path/to/mount`, or `pic /project:/workspace /cache:/cache:ro` in a terminal.
+Use the alias by running `pic`, `pic --help`, or `pic -v /cache:/cache:ro` in a terminal.
 
 ### Migrating from existing installation
 
@@ -125,7 +130,7 @@ pic
  _=/usr/bin/printenv
 ```
 
-and the file system only contains the current working directory as well as the container file system - not the entire host file system.
+and the file system only contains the current directory, the container file system, and any additional volumes explicitly mounted with `-v`/`--volume` - not the entire host file system.
 
 ### What about all my tools?
 

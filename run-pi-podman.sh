@@ -12,30 +12,30 @@ fi
 IMAGE="${PI_SANDBOX_IMAGE:-pi-sandbox:pi-${PI_VERSION}-node24}"
 AGENT_VOLUME="${PI_SANDBOX_AGENT_VOLUME:-pi-sandbox-agent}"
 
-# Arguments are mounted as container volumes.
+# Additional volumes are configured explicitly with:
+#   --volume volumeConfig
+#   -v volumeConfig
 #
-# Supported forms:
-#   ./run-pi-podman.sh
-#     Mounts the current directory at /workspace.
+# volumeConfig is a Podman-style volume string, for example:
+#   /host/path:/container/path:ro
 #
-#   ./run-pi-podman.sh /host/project /host/other
-#     Mounts the first path at /workspace and additional paths under /volumes/.
-#
-#   ./run-pi-podman.sh /host/project:/workspace /host/cache:/cache:ro
-#     Passes explicit Podman-style volume specs through, adding nodev/nosuid and
-#     defaulting to rw when no options are supplied.
+# The current directory is always mounted at /workspace. Every argument except
+# --volume/-v and their value is passed to the container entrypoint.
 PROJECT_VOLUME_ARGS=()
-USED_VOLUME_TARGETS=()
-WORKDIR=""
+CONTAINER_ARGS=()
 
-resolve_plain_path() {
-  local path="$1"
+usage() {
+  cat >&2 <<'EOF'
+Usage: run-pi-podman.sh [--volume volumeConfig|-v volumeConfig]... [container args...]
 
-  if [[ "$path" = /* ]]; then
-    printf '%s' "$path"
-  else
-    printf '%s/%s' "$PWD" "$path"
-  fi
+The current directory is always mounted at /workspace.
+
+volumeConfig must be a Podman-style volume string such as:
+  /host/path:/container/path[:options]
+
+All arguments except --usage & --volume/-v and their values are passed to pi inside the
+container.
+EOF
 }
 
 volume_target() {
@@ -61,66 +61,42 @@ with_default_volume_options() {
   fi
 }
 
-target_in_use() {
-  local target="$1"
-  local used_target
-
-  for used_target in "${USED_VOLUME_TARGETS[@]}"; do
-    if [[ "$used_target" == "$target" ]]; then
-      return 0
-    fi
-  done
-
-  return 1
-}
-
 add_project_volume() {
   local volume_spec="$1"
   local target
 
   target="$(volume_target "$volume_spec")"
-  volume_spec="$(with_default_volume_options "$volume_spec")"
-
-  if [[ -z "$WORKDIR" ]]; then
-    WORKDIR="$target"
+  if [[ "$target" == /workspace ]]; then
+    echo "Invalid volume '$volume_spec': /workspace is reserved for the current directory" >&2
+    exit 1
   fi
 
-  USED_VOLUME_TARGETS+=("$target")
+  volume_spec="$(with_default_volume_options "$volume_spec")"
+
   PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
 }
 
-if [[ $# -eq 0 ]]; then
-  add_project_volume "$(resolve_plain_path "$PWD"):/workspace"
-else
-  volume_index=0
-  for volume in "$@"; do
-    ((volume_index += 1))
-
-    if [[ "$volume" == *:* ]]; then
-      add_project_volume "$volume"
-    else
-      source_path="$(resolve_plain_path "$volume")"
-
-      if [[ $volume_index -eq 1 ]]; then
-        target_path="/workspace"
-      else
-        mount_name="$(basename "$source_path")"
-        if [[ -z "$mount_name" || "$mount_name" == / || "$mount_name" == . ]]; then
-          mount_name="volume-$volume_index"
-        fi
-        base_target_path="/volumes/$mount_name"
-        target_path="$base_target_path"
-        target_suffix=2
-        while target_in_use "$target_path"; do
-          target_path="${base_target_path}-${target_suffix}"
-          ((target_suffix += 1))
-        done
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --volume|-v)
+      if [[ $# -lt 2 ]]; then
+        usage
+        echo "$1 requires a volumeConfig argument" >&2
+        exit 1
       fi
-
-      add_project_volume "$source_path:$target_path"
-    fi
-  done
-fi
+      add_project_volume "$2"
+      shift 2
+      ;;
+    --usage)
+        usage
+        exit
+        ;;
+    *)
+      CONTAINER_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
 
 if ! podman image exists "$IMAGE"; then
   podman build -t "$IMAGE" "$SCRIPT_DIR"
@@ -136,6 +112,8 @@ podman run --rm -it \
   --ulimit nofile=1024:1024 \
   --ulimit nproc=512:512 \
   --volume "$AGENT_VOLUME:/home/node/.pi/agent:rw,nodev,nosuid" \
+  --volume "$PWD:/workspace:rw,nodev,nosuid" \
   "${PROJECT_VOLUME_ARGS[@]}" \
-  --workdir "$WORKDIR" \
-  "$IMAGE"
+  --workdir /workspace \
+  "$IMAGE" \
+  "${CONTAINER_ARGS[@]}"
