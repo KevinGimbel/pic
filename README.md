@@ -134,6 +134,8 @@ pic
 
 and the file system only contains the current directory, the container file system, and any additional volumes explicitly mounted with `-v`/`--volume` - not the entire host file system.
 
+## Frequently Asked Questions
+
 ### What about all my tools?
 
 **Question:** When running in a container, how should the agent access all my tools?
@@ -165,3 +167,22 @@ podman run --rm -it \
 ```
 
 This way, on every start, 1Password would prompt for access to the API key, and after the session the API key would _not persist in the volume_. Some providers, like GitHub Copilot, do not support API-key-based authentication and require a login via the `/login` command in `pi`.
+
+### Can I use my skills with `pic`?
+
+Yes. `pic` automatically includes the skills form the first of these directories it finds:
+
+- `$HOME/.pi/agent/skills`
+- `$HOME/.agents/skills`
+- `$HOME/.opencode/skills`
+- `$HOME/.claude/skills`
+
+If `$HOME/.pi/agent/skills` and `$HOME/.claude/skills` exist, the first match (`$HOME/.pi/agent/skills`) is mounted.
+
+Skills from the current working directory (workspace) are automatically loaded if they are inside a [directory pi loads](https://pi.dev/docs/latest/skills#locations),
+
+Any other skills can be mounted with a custom volume pointing at `/home/node/.pi/agent/skills/`:
+
+```sh
+alias pic="/run-pi-podman.sh -v $HOME/.pi/agent/skills/:/home/node/.pi/agent/skills/"
+```

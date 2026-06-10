@@ -102,6 +102,16 @@ if ! podman image exists "$IMAGE"; then
   podman build -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
+for DIR in "$HOME/.pi/agent/skills" "$HOME/.agents/skills" "$HOME/.opencode/skills" "$HOME/.claude/skills"; do
+    echo "Checking $DIR"
+    if [ -d "$DIR" ]; then
+        echo "Found $DIR"
+        volume_spec="$DIR:/home/node/.pi/agent/skills"
+        PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
+        break
+    fi
+done
+
 podman run --rm -it \
   --name pi-sandboxed \
   --cap-drop=ALL \
