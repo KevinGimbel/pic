@@ -3,6 +3,8 @@
 
 <!-- BEGIN mktoc {"min_depth": 2} -->
 
+- [Requirements](#requirements)
+- [Installation](#installation)
 - [Usage](#usage)
   - [Alias](#alias)
   - [Migrating from existing installation](#migrating-from-existing-installation)
