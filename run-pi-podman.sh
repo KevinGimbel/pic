@@ -103,9 +103,7 @@ if ! podman image exists "$IMAGE"; then
 fi
 
 for DIR in "$HOME/.pi/agent/skills" "$HOME/.agents/skills" "$HOME/.opencode/skills" "$HOME/.claude/skills"; do
-    echo "Checking $DIR"
     if [ -d "$DIR" ]; then
-        echo "Found $DIR"
         volume_spec="$DIR:/home/node/.pi/agent/skills"
         PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
         break
