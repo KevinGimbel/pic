@@ -6,12 +6,15 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Examples](#examples)
   - [Alias](#alias)
   - [Migrating from existing installation](#migrating-from-existing-installation)
 - [Installing additional tools](#installing-additional-tools)
 - [Why?](#why)
+- [Frequently Asked Questions](#frequently-asked-questions)
   - [What about all my tools?](#what-about-all-my-tools)
   - [How do I connect to my AI subscription?](#how-do-i-connect-to-my-ai-subscription)
+  - [Can I use my skills with `pic`?](#can-i-use-my-skills-with-pic)
 <!-- END mktoc -->
 
 ## Requirements
@@ -25,11 +28,29 @@
 
 ## Usage
 
-Run `pi` through the container by executing the script `./run-pi-podman.sh`. On first use or if the `PI_VERSION` in the Containerfile changed, the container is built fresh.
+Run `pi` inside a container by executing the script `./run-pi-podman.sh`. On first use or if the `PI_VERSION` in the Containerfile changed, the container is built fresh.
 
 The current directory is always mounted at `/workspace`. Additional volumes are configured with `--volume volumeConfig` or `-v volumeConfig`, where `volumeConfig` is a Podman-style volume string such as `/host/path:/container/path[:options]`. The script adds `nodev,nosuid` and defaults to `rw` when no options are supplied. Additional volumes cannot target `/workspace`, because that path is reserved for the current directory.
 
-Every other argument is passed to `pi` inside the container; no `--` separator is required.
+```sh
+Usage: run-pi-podman.sh [--allow-mount-home] [--usage] [--volume volumeConfig|-v volumeConfig]... [container args...]
+
+--allow-mount-home      Allow mounting the $HOME directory into the container
+--usage                 Show this usage message
+--volume | -v           Mount a volume to a path inside the container
+
+The current directory is always mounted at /workspace inside the container
+
+volumeConfig must be a Podman-style volume string such as:
+  /host/path:/container/path[:options]
+
+All arguments except the ones listed above are passed to pi inside the
+container. For example, the following restores a session:
+
+pic --session 019ecbc6-4f58-7bac-acb4-5ef04a3edeb9
+```
+
+### Examples
 
 ```bash
 # Grant access to files in the current directory at /workspace
@@ -50,7 +71,7 @@ Every other argument is passed to `pi` inside the container; no `--` separator i
 
 ### Alias
 
-Create an alias for easy invocation:
+Create an alias for simpler invocation:
 
 ```bash
 # in .bashrc, .zshrc, or the equivalent for your shell
@@ -156,14 +177,8 @@ Alternatively, you could expose environment variables like `OPENAI_API_KEY` or `
 
 ```sh
 podman run --rm -it \
-  --name pi-sandboxed \
-  --cap-drop=ALL \
   --env "OPENAI_API_KEY=$(op read op://vault-name/openai-api-key)" \
-  --security-opt no-new-privileges \
-  --volume "$AGENT_VOLUME:/home/node/.pi/agent:rw" \
-  --volume "$PROJECT_DIR:/workspace:rw" \
-  --workdir /workspace \
-  "$IMAGE"
+  # [...] Rest of the options
 ```
 
 This way, on every start, 1Password would prompt for access to the API key, and after the session the API key would _not persist in the volume_. Some providers, like GitHub Copilot, do not support API-key-based authentication and require a login via the `/login` command in `pi`.
@@ -186,3 +201,5 @@ Any other skills can be mounted with a custom volume pointing at `/home/node/.pi
 ```sh
 alias pic="/run-pi-podman.sh -v $HOME/.pi/agent/skills/:/home/node/.pi/agent/skills/"
 ```
+
+**IMPORTANT:** Skills are mounted as read-only by default to prevent an agent from rewriting skills.

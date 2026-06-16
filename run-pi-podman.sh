@@ -29,15 +29,21 @@ CONTAINER_ARGS=()
 
 usage() {
   cat >&2 <<'EOF'
-Usage: run-pi-podman.sh [--volume volumeConfig|-v volumeConfig]... [container args...]
+Usage: run-pi-podman.sh [--allow-mount-home] [--usage] [--volume volumeConfig|-v volumeConfig]... [container args...]
 
-The current directory is always mounted at /workspace.
+--allow-mount-home      Allow mounting the $HOME directory into the container
+--usage                 Show this usage message
+--volume | -v           Mount a volume to a path inside the container
+
+The current directory is always mounted at /workspace inside the container
 
 volumeConfig must be a Podman-style volume string such as:
   /host/path:/container/path[:options]
 
-All arguments except --usage & --volume/-v and their values are passed to pi inside the
-container.
+All arguments except the ones listed above are passed to pi inside the
+container. For example, the following restores a session:
+
+pic --session 019ecbc6-4f58-7bac-acb4-5ef04a3edeb9
 EOF
 }
 
