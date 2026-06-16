@@ -64,9 +64,9 @@ with_default_volume_options() {
   local volume_spec="$1"
 
   if [[ "$volume_spec" == *:*:* ]]; then
-    printf '%s,nodev,nosuid' "$volume_spec"
+    printf '%s,nodev,nosuid,noexec' "$volume_spec"
   else
-    printf '%s:rw,nodev,nosuid' "$volume_spec"
+    printf '%s:rw,nodev,nosuid,noexec' "$volume_spec"
   fi
 }
 
@@ -117,13 +117,13 @@ fi
 
 for DIR in "$HOME/.pi/agent/skills" "$HOME/.agents/skills" "$HOME/.opencode/skills" "$HOME/.claude/skills"; do
     if [ -d "$DIR" ]; then
-        volume_spec="$DIR:/home/node/.pi/agent/skills:ro,nodev,nosuid"
+        volume_spec="$DIR:/home/node/.pi/agent/skills:ro,nodev,nosuid,noexec"
         PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
         break
     fi
 done
 
-CONTAINER_UID="$(uuidgen)"
+CONTAINER_UID="$$"
 
 # Prevent accidentally mounting $HOME, and warn about exposure
 if [[ "$PWD" == "$HOME" ]]; then
@@ -143,7 +143,7 @@ podman run --rm -it \
   --cpus=4 \
   --ulimit nofile=1024:1024 \
   --ulimit nproc=512:512 \
-  --volume "$AGENT_VOLUME:/home/node/.pi/agent:rw,nodev,nosuid" \
+  --volume "$AGENT_VOLUME:/home/node/.pi/agent:rw,nodev,nosuid,noexec" \
   --volume "$PWD:/workspace:rw,nodev,nosuid" \
   "${PROJECT_VOLUME_ARGS[@]}" \
   --workdir /workspace \
