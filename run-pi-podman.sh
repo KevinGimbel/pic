@@ -12,6 +12,9 @@ fi
 IMAGE="${PI_SANDBOX_IMAGE:-pi-sandbox:pi-${PI_VERSION}-node24}"
 AGENT_VOLUME="${PI_SANDBOX_AGENT_VOLUME:-pi-sandbox-agent}"
 
+# Do not allow mounting $HOME by default
+ALLOW_MOUNT_HOME=false
+
 # Additional volumes are configured explicitly with:
 #   --volume volumeConfig
 #   -v volumeConfig
@@ -91,6 +94,10 @@ while [[ $# -gt 0 ]]; do
         usage
         exit
         ;;
+    --allow-mount-home)
+      ALLOW_MOUNT_HOME=true
+      shift 1
+      ;;
     *)
       CONTAINER_ARGS+=("$1")
       shift
@@ -104,14 +111,25 @@ fi
 
 for DIR in "$HOME/.pi/agent/skills" "$HOME/.agents/skills" "$HOME/.opencode/skills" "$HOME/.claude/skills"; do
     if [ -d "$DIR" ]; then
-        volume_spec="$DIR:/home/node/.pi/agent/skills"
+        volume_spec="$DIR:/home/node/.pi/agent/skills:ro,nodev,nosuid"
         PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
         break
     fi
 done
 
+CONTAINER_UID="$(uuidgen)"
+
+# Prevent accidentally mounting $HOME, and warn about exposure
+if [[ "$PWD" == "$HOME" ]]; then
+  echo "WARNING: mounting \$HOME as /workspace exposes all configurations."
+  if [[ "x$ALLOW_MOUNT_HOME" != "xtrue" ]]; then
+    echo "ERROR: Mounting \$HOME is not allowed, run with --allow-mount-home to allow mounting of \$HOME directory"
+    exit 1
+  fi
+fi
+
 podman run --rm -it \
-  --name pi-sandboxed \
+  --name pi-sandboxed-$CONTAINER_UID \
   --cap-drop=ALL \
   --security-opt no-new-privileges \
   --memory=2g \
