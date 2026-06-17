@@ -36,6 +36,8 @@ The current directory is always mounted at `/workspace`. Additional volumes are 
 Usage: run-pi-podman.sh [--allow-mount-home] [--usage] [--volume volumeConfig|-v volumeConfig]... [container args...]
 
 --allow-mount-home      Allow mounting the $HOME directory into the container
+--allow-host-network    Connect to host network by setting --net=host, required
+                        when running local LLM on host system, e.g. via ollama
 --usage                 Show this usage message
 --volume | -v           Mount a volume to a path inside the container
 
