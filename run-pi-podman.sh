@@ -24,7 +24,7 @@ ALLOW_MOUNT_HOME=false
 #
 # The current directory is always mounted at /workspace. Every argument except
 # --volume/-v and their value is passed to the container entrypoint.
-PROJECT_VOLUME_ARGS=()
+PODMAN_ARGS=()
 CONTAINER_ARGS=()
 
 usage() {
@@ -32,6 +32,8 @@ usage() {
 Usage: run-pi-podman.sh [--allow-mount-home] [--usage] [--volume volumeConfig|-v volumeConfig]... [container args...]
 
 --allow-mount-home      Allow mounting the $HOME directory into the container
+--allow-host-network    Connect to host network by setting --net=host, required
+                        when running local LLM on host system, e.g. via ollama
 --usage                 Show this usage message
 --volume | -v           Mount a volume to a path inside the container
 
@@ -82,7 +84,7 @@ add_project_volume() {
 
   volume_spec="$(with_default_volume_options "$volume_spec")"
 
-  PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
+  PODMAN_ARGS+=(--volume "$volume_spec")
 }
 
 while [[ $# -gt 0 ]]; do
@@ -104,6 +106,10 @@ while [[ $# -gt 0 ]]; do
       ALLOW_MOUNT_HOME=true
       shift 1
       ;;
+    --allow-host-network)
+      PODMAN_ARGS+=("--net=host")
+      shift 1
+      ;;
     *)
       CONTAINER_ARGS+=("$1")
       shift
@@ -118,7 +124,7 @@ fi
 for DIR in "$HOME/.pi/agent/skills" "$HOME/.agents/skills" "$HOME/.opencode/skills" "$HOME/.claude/skills"; do
     if [ -d "$DIR" ]; then
         volume_spec="$DIR:/home/node/.pi/agent/skills:ro,nodev,nosuid,noexec"
-        PROJECT_VOLUME_ARGS+=(--volume "$volume_spec")
+        PODMAN_ARGS+=(--volume "$volume_spec")
         break
     fi
 done
@@ -145,7 +151,7 @@ podman run --rm -it \
   --ulimit nproc=512:512 \
   --volume "$AGENT_VOLUME:/home/node/.pi/agent:rw,nodev,nosuid,noexec" \
   --volume "$PWD:/workspace:rw,nodev,nosuid" \
-  "${PROJECT_VOLUME_ARGS[@]}" \
+  "${PODMAN_ARGS[@]}" \
   --workdir /workspace \
   "$IMAGE" \
   "${CONTAINER_ARGS[@]}"
