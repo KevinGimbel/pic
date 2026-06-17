@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim
 
-ENV PI_VERSION="0.79.4"
+ENV PI_VERSION="0.79.6"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
