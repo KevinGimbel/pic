@@ -205,3 +205,44 @@ alias pic="/run-pi-podman.sh -v $HOME/.pi/agent/skills/:/home/node/.pi/agent/ski
 ```
 
 **IMPORTANT:** Skills are mounted as read-only by default to prevent an agent from rewriting skills.
+
+### How can I connect to a local model?
+
+Connecting to a local model depends on how the model is served. I'm exploring running models in ollama and connecting to them from `pic`.
+
+
+First, the `--allow-host-network` flag must be set so the container is running with the `--net=host` flag.
+
+#### Ollama
+
+For ollama, add the following config to `~/.pi/agent/models.json` (inside the container volume)
+
+```json
+{
+   "providers": {
+     "ollama": {
+       "api": "openai-completions",
+       "apiKey": "ollama",
+       "baseUrl": "http://host.containers.internal:11434/v1",
+       "models": [
+         {
+           "contextWindow": 262144,
+           "id": "hf.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q6_K",
+           "input": [
+             "text"
+           ]
+         }
+       ]
+     }
+   }
+ }
+```
+
+Adjust according to your setup. The important bits are:
+
+- **baseUrl**: Where the ollama server is running, default `http://host.containers.internal:11434/v1`
+- **id**: The model ID/Name. Can be seen by running `ollama ls`
+
+#### What about llama.cpp/vllm/OtherToolHere ?
+
+Feel free to contribute a guide. I only document what I'm using. 😁
