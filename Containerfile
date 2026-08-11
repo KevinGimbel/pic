@@ -1,6 +1,6 @@
-FROM node:24-bookworm-slim
+FROM node:26-trixie-slim
 
-ENV PI_VERSION="0.80.6"
+ENV PI_VERSION="0.84.1"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
