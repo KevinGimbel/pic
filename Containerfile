@@ -1,6 +1,6 @@
 FROM node:26-trixie-slim
 
-ENV PI_VERSION="0.84.1"
+ENV PI_VERSION="1.0.3"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
